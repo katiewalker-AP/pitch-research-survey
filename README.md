@@ -165,9 +165,54 @@ Click **Deploy → New Deployment**. Set:
 - **Execute as:** Me
 - **Who has access:** Anyone
 
-Copy the Web App URL — that's your `NEXT_PUBLIC_FORM_ENDPOINT`.
+Copy the Web App URL — that's your `FORM_ENDPOINT`.
 
-> **Important:** Each time you change the Apps Script, click **Deploy → Manage Deployments** and create a new version, then update the URL in your environment variable.
+> **Important:** The Apps Script above joins multi-select answers with `" | "` and ranked answers with `" | "`. The results dashboard parser expects `", "` for multi-select (Q6) and `" > "` for ranking (Q9). To match, update the `join` calls in your Apps Script:
+> ```js
+> // For arrays (Q6 multi-select and Q9 rank):
+> Array.isArray(v) && key === 'q6' ? v.join(', ') :
+> Array.isArray(v) && key === 'q9' ? v.join(' > ') :
+> Array.isArray(v) ? v.join(', ') : String(v ?? '')
+> ```
+
+> **Each time you change the Apps Script**, click **Deploy → Manage Deployments** and create a new version, then update the URL in your environment variable.
+
+---
+
+## Results dashboard
+
+The dashboard lives at `/results` and shows live data from the Google Sheet.
+
+### 1. Make the Google Sheet publicly viewable
+
+Open the sheet → click **Share** → change access to **Anyone with the link** can **View**. This is required for the API key approach to work. The sheet remains read-only.
+
+### 2. Create a Google Sheets API key
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) and sign in.
+2. Create a new project (or select an existing one).
+3. In the left menu, go to **APIs & Services → Library**.
+4. Search for **Google Sheets API** and click **Enable**.
+5. Go to **APIs & Services → Credentials**.
+6. Click **Create Credentials → API Key**.
+7. Copy the key — that's your `GOOGLE_SHEETS_API_KEY`.
+8. (Optional but recommended) Click the key → **Restrict key** → limit it to the Google Sheets API only.
+
+### 3. Add it to your environment
+
+In `.env.local`:
+```
+GOOGLE_SHEETS_API_KEY=AIzaSy_YOUR_KEY_HERE
+```
+
+In Vercel, add it under **Settings → Environment Variables**:
+
+| Name | Value |
+|---|---|
+| `FORM_ENDPOINT` | Your Google Apps Script URL |
+| `GOOGLE_SHEETS_API_KEY` | Your Google Cloud API key |
+
+The dashboard auto-refreshes every 60 seconds. Visit `/results` — no login required.
 
 ---
 
@@ -176,13 +221,30 @@ Copy the Web App URL — that's your `NEXT_PUBLIC_FORM_ENDPOINT`.
 ```
 pitch-research-survey/
 ├── app/
-│   ├── layout.tsx        — fonts, metadata, root layout
-│   ├── page.tsx          — renders the SurveyApp
-│   └── globals.css       — Tailwind base + custom animations
+│   ├── api/
+│   │   ├── submit/route.ts   — survey submission proxy (avoids CORS)
+│   │   └── results/route.ts  — fetches rows from Google Sheets
+│   ├── results/page.tsx      — results dashboard page
+│   ├── layout.tsx
+│   ├── page.tsx
+│   └── globals.css
 ├── components/
-│   ├── SurveyApp.tsx     — main state machine (screen routing, submission)
-│   ├── IntroScreen.tsx   — welcome screen
-│   ├── PreviewScreen.tsx — pitch deck iframe interstitial
+│   ├── results/
+│   │   ├── ResultsDashboard.tsx — main client: fetch, auto-refresh, tabs
+│   │   ├── HorizontalBar.tsx    — stacked & ranked bar charts
+│   │   ├── ScoreDisplay.tsx     — large score + pip gauge
+│   │   ├── QuoteCard.tsx        — open text quote card
+│   │   ├── WordCloud.tsx        — word frequency cloud
+│   │   ├── MetricCard.tsx       — summary metric tile
+│   │   ├── LoadingSkeleton.tsx
+│   │   └── tabs/
+│   │       ├── OverviewTab.tsx
+│   │       ├── PitchProcessTab.tsx
+│   │       ├── ContentStructureTab.tsx
+│   │       └── BrandAppTab.tsx
+│   ├── SurveyApp.tsx
+│   ├── IntroScreen.tsx
+│   ├── PreviewScreen.tsx
 │   ├── ThankYouScreen.tsx
 │   ├── ProgressHeader.tsx
 │   ├── SectionTransition.tsx
@@ -191,11 +253,12 @@ pitch-research-survey/
 │       ├── MultipleChoice.tsx
 │       ├── MultiSelect.tsx
 │       ├── Scale10.tsx
-│       ├── Rank.tsx      — drag-to-reorder (dnd-kit)
+│       ├── Rank.tsx
 │       └── OpenText.tsx
 ├── lib/
-│   └── questions.ts      — all survey content (edit here)
-├── .env.local.example    — environment variable template
+│   ├── questions.ts         — all survey content (edit here)
+│   └── analyzeResults.ts    — pure analysis utilities
+├── .env.local.example
 └── README.md
 ```
 
