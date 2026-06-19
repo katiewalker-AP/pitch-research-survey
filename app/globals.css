@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-lexend: 'Lexend', system-ui, sans-serif;
+  --font-playfair: 'Playfair Display', Georgia, serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: #F7F5F2;
+  color: #173340;
+  font-family: var(--font-lexend);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Drag-and-drop grab cursor */
+[data-drag-handle] {
+  cursor: grab;
+}
+[data-drag-handle]:active {
+  cursor: grabbing;
+}
+
+/* Checkmark animation */
+.check-path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: drawCheck 0.6s ease 0.4s forwards;
+}
+
+/* Circle scale for thank-you */
+.circle-scale {
+  animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s forwards;
+  opacity: 0;
+}
+
+/* Pulse dot in header */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+.pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Screen transition wrapper */
+.screen-enter {
+  animation: fadeSlideIn 0.4s ease forwards;
+}
+
+/* Section banner */
+.section-banner {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+/* Override for scale items */
+.scale-item-selected {
+  background-color: #173340;
+  color: #fff;
+  border-color: #173340;
+}
+
+/* Smooth iframe resize */
+iframe {
+  transition: opacity 0.3s ease;
+}
